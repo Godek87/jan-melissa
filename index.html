@@ -482,23 +482,22 @@ function loadScript(url) {
 }
 
 window.twilioReady = (async function() {
-  // Force SDK v1 first (compatible with Access Tokens)
-  const v1url = 'https://sdk.twilio.com/js/client/v1.14/twilio.js';
-  try {
-    await loadScript(v1url);
-    if (window.Twilio) {
-      console.log('Twilio SDK v1 OK');
-      return true;
-    }
-  } catch(e) {
-    console.warn('v1 failed:', e.message);
-  }
-  // fallback to v2 urls
-  for (const url of TWILIO_URLS) {
+  // Only use SDK v2 — v1 does not accept Access Tokens
+  const v2urls = [
+    'https://sdk.twilio.com/js/voice/releases/2.10.0/twilio.min.js',
+    'https://sdk.twilio.com/js/voice/releases/2.9.0/twilio.min.js',
+    'https://sdk.twilio.com/js/voice/releases/2.7.0/twilio.min.js',
+  ];
+  for (const url of v2urls) {
     try {
       await loadScript(url);
-      if (window.Twilio) return true;
-    } catch(e) {}
+      if (window.Twilio && window.Twilio.Device) {
+        console.log('Twilio SDK v2 loaded:', url);
+        return url;
+      }
+    } catch(e) {
+      console.warn('Failed:', url, e.message);
+    }
   }
   return false;
 })();
@@ -553,7 +552,7 @@ window.twilioReady = (async function() {
       btn.textContent = '▶ ИНИЦИАЛИЗИРОВАТЬ';
       return;
     }
-    log('SDK загружен успешно', 'success');
+    log('SDK v2 загружен: ' + sdkLoaded, 'success');
 
     setStatus('ПОЛУЧЕНИЕ ТОКЕНА...', 'calling');
     log('Запрос токена...', 'info');
