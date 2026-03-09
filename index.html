@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Melissa — Web Phone</title>
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Rajdhani:wght@300;400;600;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0a0e14;
+    --surface: #0f1520;
+    --panel: #141c2e;
+    --border: #1e2d4a;
+    --accent: #00d4ff;
+    --accent2: #ff6b35;
+    --green: #00ff88;
+    --red: #ff3355;
+    --text: #c8d8f0;
+    --dim: #4a6080;
+    --glow: 0 0 20px rgba(0,212,255,0.3);
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Rajdhani', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 20%, rgba(0,212,255,0.05) 0%, transparent 60%),
+      radial-gradient(ellipse 40% 60% at 80% 80%, rgba(255,107,53,0.04) 0%, transparent 60%);
+    pointer-events: none;
+  }
+
+  /* Grid lines */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image: 
+      linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+  }
+
+  .container {
+    width: 380px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+    box-shadow: 0 0 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(0,212,255,0.1);
+    position: relative;
+    z-index: 1;
+    animation: fadeIn 0.5s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Header */
+  .header {
+    background: var(--panel);
+    border-bottom: 1px solid var(--border);
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .logo {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--accent);
+    text-shadow: var(--glow);
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .logo span { color: var(--accent2); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--dim);
+    transition: all 0.3s;
+    position: relative;
+  }
+
+  .status-dot.ready { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .status-dot.calling { background: var(--accent2); box-shadow: 0 0 8px var(--accent2); animation: pulse 1s infinite; }
+  .status-dot.connected { background: var(--green); box-shadow: 0 0 8px var(--green); animation: pulse 2s infinite; }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.4; }
+  }
+
+  /* Config section */
+  .config-section {
+    padding: 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--dim);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    font-family: 'Share Tech Mono', monospace;
+  }
+
+  .input-group {
+    margin-bottom: 10px;
+  }
+
+  .input-group label {
+    display: block;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+  }
+
+  .input-group input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 8px 12px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    outline: none;
+    transition: border-color 0.2s;
+    border-radius: 1px;
+  }
+
+  .input-group input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(0,212,255,0.2);
+  }
+
+  .input-group input::placeholder { color: var(--dim); }
+
+  .btn-init {
+    width: 100%;
+    margin-top: 12px;
+    padding: 10px;
+    background: transparent;
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .btn-init:hover {
+    background: rgba(0,212,255,0.1);
+    box-shadow: var(--glow);
+  }
+
+  .btn-init:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  /* Display */
+  .display {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg);
+  }
+
+  .status-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    color: var(--dim);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 8px;
+    min-height: 16px;
+    transition: color 0.3s;
+  }
+
+  .status-text.active { color: var(--green); }
+  .status-text.calling { color: var(--accent2); }
+  .status-text.error { color: var(--red); }
+
+  .number-display {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 24px;
+    color: var(--text);
+    letter-spacing: 3px;
+    min-height: 36px;
+    word-break: break-all;
+  }
+
+  .timer {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    color: var(--accent);
+    margin-top: 6px;
+    min-height: 18px;
+    letter-spacing: 2px;
+  }
+
+  /* Dialpad */
+  .dialpad {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .keys {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .key {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 14px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-radius: 1px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .key::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(0,212,255,0.1);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .key:hover { border-color: var(--accent); }
+  .key:hover::after { opacity: 1; }
+
+  .key:active { transform: scale(0.95); }
+
+  .key-num {
+    display: block;
+    font-size: 22px;
+    font-weight: 600;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--text);
+    line-height: 1;
+  }
+
+  .key-letters {
+    display: block;
+    font-size: 8px;
+    letter-spacing: 2px;
+    color: var(--dim);
+    margin-top: 2px;
+    min-height: 10px;
+  }
+
+  .key.special { color: var(--accent); }
+  .key.special .key-num { color: var(--accent); }
+
+  /* Action buttons */
+  .actions {
+    padding: 16px 20px;
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+  }
+
+  .btn-call {
+    background: var(--green);
+    border: none;
+    color: #000;
+    padding: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 1px;
+  }
+
+  .btn-call:hover { box-shadow: 0 0 20px rgba(0,255,136,0.4); transform: translateY(-1px); }
+  .btn-call:disabled { opacity: 0.3; cursor: not-allowed; transform: none; }
+
+  .btn-hangup {
+    background: var(--red);
+    border: none;
+    color: #fff;
+    padding: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 1px;
+  }
+
+  .btn-hangup:hover { box-shadow: 0 0 20px rgba(255,51,85,0.4); }
+  .btn-hangup:disabled { opacity: 0.3; cursor: not-allowed; }
+
+  .btn-clear {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--dim);
+    padding: 14px;
+    font-family: 'Rajdhani', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-radius: 1px;
+  }
+
+  .btn-clear:hover { border-color: var(--dim); color: var(--text); }
+
+  /* Log */
+  .log {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    max-height: 80px;
+    overflow-y: auto;
+    background: var(--bg);
+  }
+
+  .log::-webkit-scrollbar { width: 2px; }
+  .log::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .log-entry {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    color: var(--dim);
+    letter-spacing: 1px;
+    padding: 1px 0;
+    transition: color 0.2s;
+  }
+
+  .log-entry.info { color: var(--accent); }
+  .log-entry.success { color: var(--green); }
+  .log-entry.error { color: var(--red); }
+
+  /* Instructions */
+  .instructions {
+    padding: 12px 20px;
+    border-top: 1px solid var(--border);
+    font-size: 11px;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  .instructions a {
+    color: var(--accent);
+    text-decoration: none;
+  }
+
+  .scanner-line {
+    position: absolute;
+    left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    opacity: 0.3;
+    animation: scan 4s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes scan {
+    0% { top: 0; }
+    100% { top: 100%; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="scanner-line"></div>
+
+  <div class="header">
+    <div class="logo">MEL<span>ISSA</span></div>
+    <div id="statusDot" class="status-dot"></div>
+  </div>
+
+  <div class="config-section">
+    <div class="section-label">// Конфигурация Twilio</div>
+    <div class="input-group">
+      <label>Token URL (ваш сервер)</label>
+      <input type="text" id="tokenUrl" value="https://wooden-beginning-triumph-exception.trycloudflare.com/api/twilio/payment/token" />
+    </div>
+    <div class="input-group">
+      <label>Номер для звонка</label>
+      <input type="text" id="toNumber" value="+16089098641" />
+    </div>
+    <button class="btn-init" id="btnInit" onclick="initTwilio()">▶ ИНИЦИАЛИЗИРОВАТЬ</button>
+  </div>
+
+  <div class="display">
+    <div class="status-text" id="statusText">// ОЖИДАНИЕ ИНИЦИАЛИЗАЦИИ</div>
+    <div class="number-display" id="numberDisplay">_ _ _ _ _ _ _ _ _ _</div>
+    <div class="timer" id="timer"></div>
+  </div>
+
+  <div class="dialpad">
+    <div class="section-label">// DTMF Клавиатура</div>
+    <div class="keys">
+      <div class="key" onclick="pressKey('1')"><span class="key-num">1</span><span class="key-letters"></span></div>
+      <div class="key" onclick="pressKey('2')"><span class="key-num">2</span><span class="key-letters">ABC</span></div>
+      <div class="key" onclick="pressKey('3')"><span class="key-num">3</span><span class="key-letters">DEF</span></div>
+      <div class="key" onclick="pressKey('4')"><span class="key-num">4</span><span class="key-letters">GHI</span></div>
+      <div class="key" onclick="pressKey('5')"><span class="key-num">5</span><span class="key-letters">JKL</span></div>
+      <div class="key" onclick="pressKey('6')"><span class="key-num">6</span><span class="key-letters">MNO</span></div>
+      <div class="key" onclick="pressKey('7')"><span class="key-num">7</span><span class="key-letters">PQRS</span></div>
+      <div class="key" onclick="pressKey('8')"><span class="key-num">8</span><span class="key-letters">TUV</span></div>
+      <div class="key" onclick="pressKey('9')"><span class="key-num">9</span><span class="key-letters">WXYZ</span></div>
+      <div class="key special" onclick="pressKey('*')"><span class="key-num">*</span><span class="key-letters"></span></div>
+      <div class="key" onclick="pressKey('0')"><span class="key-num">0</span><span class="key-letters">+</span></div>
+      <div class="key special" onclick="pressKey('#')"><span class="key-num">#</span><span class="key-letters"></span></div>
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-call" id="btnCall" onclick="makeCall()" disabled>📞 ЗВОНОК</button>
+    <button class="btn-hangup" id="btnHangup" onclick="hangUp()" disabled>✕ СБРОС</button>
+    <button class="btn-clear" onclick="clearDisplay()">⌫ ОЧИСТ.</button>
+  </div>
+
+  <div class="log" id="logPanel">
+    <div class="log-entry">// лог событий</div>
+  </div>
+
+  <div class="instructions">
+    ⚠️ Нужен <strong style="color:#c8d8f0">Token Server</strong>. 
+    <a href="https://www.twilio.com/docs/voice/sdks/javascript/get-started" target="_blank">Инструкция Twilio →</a>
+  </div>
+</div>
+
+<script>
+// Dynamic Twilio SDK loader
+const TWILIO_URLS = [
+  'https://sdk.twilio.com/js/voice/releases/2.10.0/twilio.min.js',
+  'https://sdk.twilio.com/js/voice/releases/2.9.0/twilio.min.js',
+  'https://sdk.twilio.com/js/voice/releases/2.7.0/twilio.min.js',
+  'https://sdk.twilio.com/js/client/v1.14/twilio.js',
+];
+
+function loadScript(url) {
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = url;
+    s.onload = resolve;
+    s.onerror = () => reject(new Error('Failed: ' + url));
+    document.head.appendChild(s);
+  });
+}
+
+window.twilioReady = (async function() {
+  // Force SDK v1 first (compatible with Access Tokens)
+  const v1url = 'https://sdk.twilio.com/js/client/v1.14/twilio.js';
+  try {
+    await loadScript(v1url);
+    if (window.Twilio) {
+      console.log('Twilio SDK v1 OK');
+      return true;
+    }
+  } catch(e) {
+    console.warn('v1 failed:', e.message);
+  }
+  // fallback to v2 urls
+  for (const url of TWILIO_URLS) {
+    try {
+      await loadScript(url);
+      if (window.Twilio) return true;
+    } catch(e) {}
+  }
+  return false;
+})();
+</script>
+<script>
+  let device = null;
+  let call = null;
+  let timerInterval = null;
+  let seconds = 0;
+  let dtmfBuffer = '';
+
+  function log(msg, type = '') {
+    const panel = document.getElementById('logPanel');
+    const entry = document.createElement('div');
+    entry.className = 'log-entry ' + type;
+    entry.textContent = '> ' + new Date().toLocaleTimeString() + ' ' + msg;
+    panel.appendChild(entry);
+    panel.scrollTop = panel.scrollHeight;
+  }
+
+  function setStatus(text, type = '') {
+    const el = document.getElementById('statusText');
+    el.textContent = '// ' + text;
+    el.className = 'status-text ' + type;
+  }
+
+  function setDot(state) {
+    const dot = document.getElementById('statusDot');
+    dot.className = 'status-dot ' + state;
+  }
+
+  function updateDisplay(text) {
+    document.getElementById('numberDisplay').textContent = text || '_ _ _ _ _ _ _ _ _ _';
+  }
+
+  async function initTwilio() {
+    const tokenUrl = document.getElementById('tokenUrl').value.trim();
+    if (!tokenUrl) { log('Введите Token URL!', 'error'); return; }
+
+    const btn = document.getElementById('btnInit');
+    btn.disabled = true;
+    btn.textContent = '⏳ ЗАГРУЗКА...';
+    setStatus('ЗАГРУЗКА SDK...', 'calling');
+    log('Загрузка Twilio SDK...', 'info');
+
+    // Wait for SDK to load
+    const sdkLoaded = await window.twilioReady;
+    if (!sdkLoaded || !window.Twilio) {
+      log('Ошибка: Twilio SDK не загружен. Проверьте интернет-соединение.', 'error');
+      setStatus('SDK НЕ ЗАГРУЖЕН', 'error');
+      btn.disabled = false;
+      btn.textContent = '▶ ИНИЦИАЛИЗИРОВАТЬ';
+      return;
+    }
+    log('SDK загружен успешно', 'success');
+
+    setStatus('ПОЛУЧЕНИЕ ТОКЕНА...', 'calling');
+    log('Запрос токена...', 'info');
+
+    try {
+      const resp = await fetch(tokenUrl);
+      let token;
+      const rawText = await resp.text();
+      log('Ответ сервера: ' + rawText.substring(0, 80) + '...', 'info');
+      
+      // Try JSON first, then plain string
+      try {
+        const data = JSON.parse(rawText);
+        token = data.token || data.accessToken || data.access_token || (typeof data === 'string' ? data : null);
+      } catch(e) {
+        // Plain JWT string
+        token = rawText.trim();
+      }
+      
+      if (!token) {
+        log('Ошибка: токен не найден в ответе сервера', 'error');
+        setStatus('ТОКЕН НЕ НАЙДЕН', 'error');
+        btn.disabled = false;
+        btn.textContent = '▶ ИНИЦИАЛИЗИРОВАТЬ';
+        return;
+      }
+      
+      log('Токен получен, длина: ' + token.length + ' символов', 'info');
+
+      // Use SDK v1 style init
+      device = new Twilio.Device(token, {
+        codecPreferences: ['opus', 'pcmu'],
+        debug: true
+      });
+
+      // Support both SDK v1 (ready) and v2 (registered)
+      const onReady = () => {
+        setStatus('ГОТОВ К ЗВОНКУ', 'active');
+        setDot('ready');
+        document.getElementById('btnCall').disabled = false;
+        log('Устройство готово ✓', 'success');
+        btn.textContent = '✓ ПОДКЛЮЧЕНО';
+      };
+      device.on('registered', onReady);
+      device.on('ready', onReady);
+
+      device.on('error', (err) => {
+        setStatus('ОШИБКА: ' + err.message, 'error');
+        setDot('');
+        log('Ошибка: ' + err.message, 'error');
+        btn.disabled = false;
+        btn.textContent = '▶ ИНИЦИАЛИЗИРОВАТЬ';
+      });
+
+    } catch (e) {
+      setStatus('ОШИБКА ПОДКЛЮЧЕНИЯ', 'error');
+      log('Ошибка: ' + e.message, 'error');
+      btn.disabled = false;
+      btn.textContent = '▶ ИНИЦИАЛИЗИРОВАТЬ';
+    }
+  }
+
+  async function makeCall() {
+    if (!device) { log('Устройство не инициализировано', 'error'); return; }
+    const to = document.getElementById('toNumber').value.trim();
+    if (!to) { log('Введите номер для звонка', 'error'); return; }
+
+    setStatus('НАБОР НОМЕРА...', 'calling');
+    setDot('calling');
+    log('Звоним на ' + to + '...', 'info');
+
+    try {
+      call = await device.connect({ params: { To: to } });
+
+      call.on('accept', () => {
+        setStatus('СОЕДИНЕНИЕ УСТАНОВЛЕНО', 'active');
+        setDot('connected');
+        document.getElementById('btnHangup').disabled = false;
+        document.getElementById('btnCall').disabled = true;
+        startTimer();
+        log('Звонок подключён', 'success');
+        dtmfBuffer = '';
+        updateDisplay('');
+      });
+
+      call.on('disconnect', () => {
+        call = null;
+        setStatus('ЗВОНОК ЗАВЕРШЁН', '');
+        setDot('ready');
+        document.getElementById('btnHangup').disabled = true;
+        document.getElementById('btnCall').disabled = false;
+        stopTimer();
+        log('Звонок завершён', 'info');
+      });
+
+      call.on('error', (err) => {
+        log('Ошибка звонка: ' + err.message, 'error');
+      });
+
+    } catch(e) {
+      log('Ошибка: ' + e.message, 'error');
+      setStatus('ОШИБКА ЗВОНКА', 'error');
+    }
+  }
+
+  function hangUp() {
+    if (call) { call.disconnect(); call = null; }
+    if (device) device.disconnectAll();
+  }
+
+  function pressKey(key) {
+    // Send DTMF if in call
+    if (call) {
+      call.sendDigits(key);
+      log('DTMF отправлен: ' + key, 'info');
+    }
+
+    // Update display buffer
+    dtmfBuffer += key;
+    if (dtmfBuffer.length > 16) dtmfBuffer = dtmfBuffer.slice(-16);
+
+    // Format nicely
+    let formatted = dtmfBuffer.split('').join(' ');
+    updateDisplay(formatted);
+
+    // Visual flash on key
+    flashKey(key);
+  }
+
+  function flashKey(key) {
+    const keys = document.querySelectorAll('.key .key-num');
+    keys.forEach(k => {
+      if (k.textContent === key) {
+        k.parentElement.style.borderColor = 'var(--accent)';
+        k.parentElement.style.background = 'rgba(0,212,255,0.15)';
+        setTimeout(() => {
+          k.parentElement.style.borderColor = '';
+          k.parentElement.style.background = '';
+        }, 150);
+      }
+    });
+  }
+
+  function clearDisplay() {
+    dtmfBuffer = '';
+    updateDisplay('');
+  }
+
+  function startTimer() {
+    seconds = 0;
+    timerInterval = setInterval(() => {
+      seconds++;
+      const m = String(Math.floor(seconds / 60)).padStart(2, '0');
+      const s = String(seconds % 60).padStart(2, '0');
+      document.getElementById('timer').textContent = '⏱ ' + m + ':' + s;
+    }, 1000);
+  }
+
+  function stopTimer() {
+    clearInterval(timerInterval);
+    document.getElementById('timer').textContent = '';
+  }
+
+  // Keyboard support
+  document.addEventListener('keydown', (e) => {
+    const validKeys = '0123456789*#';
+    if (validKeys.includes(e.key)) {
+      pressKey(e.key);
+    }
+  });
+</script>
+</body>
+</html>
